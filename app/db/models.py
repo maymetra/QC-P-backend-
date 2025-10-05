@@ -69,3 +69,10 @@ class Template(Base):
     # Связь с пользователем, который создал шаблон (опционально, но хорошая практика)
     owner_id = Column(Integer, ForeignKey("users.id"))
     owner = relationship("User")
+
+class KnowledgeBaseItem(Base):
+    __tablename__ = "knowledge_base_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    category = Column(String, index=True, nullable=False)
+    item = Column(String, nullable=False, unique=True)
