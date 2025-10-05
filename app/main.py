@@ -1,13 +1,32 @@
 # app/main.py
 from fastapi import FastAPI
-from app.api.v1 import auth, projects # <-- Добавляем импорт projects
+from fastapi.middleware.cors import CORSMiddleware  # <-- 1. Импортируем middleware
+
+from app.api.v1 import auth, projects
 
 app = FastAPI(title="Quality Control API")
 
+# --- НАЧАЛО НОВОГО КОДА ---
+
+# Список адресов, с которых мы разрешаем запросы.
+# В будущем сюда можно будет добавить адрес твоего продакшн-сайта.
+origins = [
+    "http://localhost:5173", # Адрес твоего React-приложения
+    "http://127.0.0.1:5173",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # Разрешить запросы с этих адресов
+    allow_credentials=True, # Разрешить передачу cookie/токенов
+    allow_methods=["*"],    # Разрешить все методы (GET, POST, etc.)
+    allow_headers=["*"],    # Разрешить все заголовки
+)
+# --- КОНЕЦ НОВОГО КОДА ---
+
 # Подключаем роутеры
 app.include_router(auth.router, prefix="/api/v1")
-app.include_router(projects.router, prefix="/api/v1") # <-- Добавляем роутер проектов
-
+app.include_router(projects.router, prefix="/api/v1")
 
 # Создаем первый "маршрут" или "эндпоинт"
 @app.get("/")
