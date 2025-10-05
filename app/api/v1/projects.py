@@ -1,5 +1,5 @@
 # app/api/v1/projects.py
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -34,3 +34,17 @@ def create_project_for_user(
     Создать новый проект. Владельцем становится текущий пользователь.
     """
     return crud_project.create_project(db=db, project=project, owner_id=current_user.id)
+
+@router.delete("/{project_id}", status_code=status.HTTP_200_OK)
+def delete_project(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_admin: models.User = Depends(deps.get_current_admin_user) # <-- Только для админов!
+):
+    """
+    Удалить проект по ID.
+    """
+    project = crud_project.delete_project(db=db, project_id=project_id)
+    if project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return {"detail": "Project deleted successfully"}

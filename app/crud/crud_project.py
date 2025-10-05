@@ -31,3 +31,13 @@ def create_project(db: Session, project: project_schema.ProjectCreate, owner_id:
     db.commit()
     db.refresh(db_project)
     return db_project
+
+def delete_project(db: Session, project_id: int):
+    """
+    Удалить проект по ID.
+    """
+    db_project = db.query(models.Project).filter(models.Project.id == project_id).first()
+    if db_project:
+        db.delete(db_project)
+        db.commit()
+    return db_project
