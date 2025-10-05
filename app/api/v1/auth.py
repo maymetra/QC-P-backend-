@@ -41,5 +41,7 @@ def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    access_token = security.create_access_token(data={"sub": user.username})
+    access_token = security.create_access_token(
+        data={"sub": user.username, "name": user.name, "role": user.role}
+    )
     return {"access_token": access_token, "token_type": "bearer"}
