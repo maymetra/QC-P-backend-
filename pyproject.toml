@@ -1,0 +1,27 @@
+[project]
+name = "qc-p-backend"
+version = "0.1.0"
+description = "Backend for qc-p app"
+authors = [
+    {name = "artem",email = "artem@iamashev.de"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi (>=0.118.0,<0.119.0)",
+    "uvicorn[standard] (>=0.37.0,<0.38.0)",
+    "sqlalchemy (>=2.0.43,<3.0.0)",
+    "psycopg2-binary (>=2.9.10,<3.0.0)",
+    "pydantic-settings (>=2.11.0,<3.0.0)",
+    "python-dotenv (>=1.1.1,<2.0.0)",
+    "alembic (>=1.16.5,<2.0.0)",
+    "python-jose (>=3.5.0,<4.0.0)",
+    "python-multipart (>=0.0.20,<0.0.21)",
+    "bcrypt (<4)",
+    "passlib (>=1.7.4)",
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
