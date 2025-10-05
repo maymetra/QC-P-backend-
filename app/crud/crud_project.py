@@ -1,7 +1,9 @@
 # app/crud/crud_project.py
 from sqlalchemy.orm import Session
 from app.db import models
-from app.schemas import project as project_schema
+from app.schemas import project as project_schema, item as item_schema
+from app.crud import crud_template, crud_item # <-- Импортируем crud_template и crud_item
+
 
 
 def get_projects(db: Session, user: models.User, skip: int = 0, limit: int = 100):
@@ -22,14 +24,26 @@ def get_projects(db: Session, user: models.User, skip: int = 0, limit: int = 100
 def create_project(db: Session, project: project_schema.ProjectCreate, owner_id: int):
     """
     Создать новый проект для пользователя.
+    Если указан шаблон, создать задачи из него.
     """
-    db_project = models.Project(
-        **project.model_dump(),
-        owner_id=owner_id
-    )
+    # 1. Создаем сам проект
+    project_data = project.model_dump(exclude={"template", "basePlannedDate"})
+    db_project = models.Project(**project_data, owner_id=owner_id)
     db.add(db_project)
     db.commit()
     db.refresh(db_project)
+
+    # 2. Если был передан шаблон, создаем задачи
+    if project.template:
+        template = crud_template.get_template_by_name(db, name=project.template)
+        if template:
+            for item_name in template.items:
+                item_in = item_schema.ItemCreate(
+                    item=item_name,
+                    planned_date=project.basePlannedDate
+                )
+                crud_item.create_project_item(db=db, item=item_in, project_id=db_project.id)
+
     return db_project
 
 def delete_project(db: Session, project_id: int):

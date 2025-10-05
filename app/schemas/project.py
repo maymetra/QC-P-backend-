@@ -1,6 +1,8 @@
 # app/schemas/project.py
 from pydantic import BaseModel
 from .user import User  # <-- 1. Импортируем схему пользователя
+from typing import Optional  # <-- Импортируем Optional
+from datetime import date     # <-- Импортируем date
 
 # Базовая схема, содержит общие поля
 class ProjectBase(BaseModel):
@@ -11,7 +13,8 @@ class ProjectBase(BaseModel):
 
 # Схема для создания проекта (то, что мы ждем от фронтенда)
 class ProjectCreate(ProjectBase):
-    pass
+    template: Optional[str] = None
+    basePlannedDate: Optional[date] = None
 
 # Схема для обновления проекта
 class ProjectUpdate(ProjectBase):
