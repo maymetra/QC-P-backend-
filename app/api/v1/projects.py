@@ -1,5 +1,5 @@
 # app/api/v1/projects.py
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -16,23 +16,21 @@ def read_projects(
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
-    current_user: models.User = Depends(deps.get_current_user) # <-- ЗАЩИТА!
+    current_user: models.User = Depends(deps.get_current_user)
 ):
     """
-    Получить список проектов, принадлежащих текущему пользователю.
+    Получить список проектов в зависимости от роли текущего пользователя.
     """
-    projects = crud_project.get_projects_by_owner(
-        db=db, owner_id=current_user.id, skip=skip, limit=limit
-    )
+    projects = crud_project.get_projects(db=db, user=current_user, skip=skip, limit=limit)
     return projects
 
 @router.post("/", response_model=project_schema.Project)
-def create_project(
+def create_project_for_user(
     project: project_schema.ProjectCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(deps.get_current_user) # <-- ЗАЩИТА!
+    current_user: models.User = Depends(deps.get_current_user)
 ):
     """
-    Создать новый проект для текущего пользователя.
+    Создать новый проект. Владельцем становится текущий пользователь.
     """
     return crud_project.create_project(db=db, project=project, owner_id=current_user.id)
