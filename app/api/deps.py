@@ -37,3 +37,14 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
     if user is None:
         raise credentials_exception
     return user
+
+def get_current_admin_user(current_user: models.User = Depends(get_current_user)):
+    """
+    Зависимость, которая проверяет, является ли текущий пользователь админом.
+    """
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="The user doesn't have enough privileges",
+        )
+    return current_user

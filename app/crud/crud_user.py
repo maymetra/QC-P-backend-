@@ -4,26 +4,49 @@ from app.db import models
 from app.schemas import user as user_schema
 from app.core.security import get_password_hash
 
+
 def get_user_by_username(db: Session, username: str):
-    """
-    Функция для получения пользователя по его имени.
-    """
     return db.query(models.User).filter(models.User.username == username).first()
 
+
+def get_user(db: Session, user_id: int):
+    return db.query(models.User).filter(models.User.id == user_id).first()
+
+
+def get_users(db: Session, skip: int = 0, limit: int = 100):
+    """Получить список всех пользователей."""
+    return db.query(models.User).offset(skip).limit(limit).all()
+
+
 def create_user(db: Session, user: user_schema.UserCreate):
-    """
-    Функция для создания нового пользователя в базе данных.
-    """
-    # Хешируем пароль перед сохранением
     hashed_password = get_password_hash(user.password)
-    # Создаем объект модели SQLAlchemy
     db_user = models.User(
         username=user.username,
         name=user.name,
         role=user.role,
         hashed_password=hashed_password,
     )
-    # Добавляем в сессию и сохраняем в БД
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+
+def update_user(db: Session, db_user: models.User, user_in: user_schema.UserCreate):
+    """Обновить данные пользователя."""
+    # Обновляем данные из Pydantic схемы
+    update_data = user_in.model_dump(exclude_unset=True)
+
+    # Если в запросе пришел новый пароль, хешируем его
+    if "password" in update_data and update_data["password"]:
+        hashed_password = get_password_hash(update_data["password"])
+        update_data["hashed_password"] = hashed_password
+        del update_data["password"]  # Удаляем открытый пароль из данных для обновления
+
+    # Применяем обновления
+    for field, value in update_data.items():
+        setattr(db_user, field, value)
+
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
