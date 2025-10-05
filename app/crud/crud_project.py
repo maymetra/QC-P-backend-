@@ -41,3 +41,23 @@ def delete_project(db: Session, project_id: int):
         db.delete(db_project)
         db.commit()
     return db_project
+
+def get_project(db: Session, project_id: int):
+    """
+    Получить проект по ID.
+    """
+    return db.query(models.Project).filter(models.Project.id == project_id).first()
+
+def update_project(db: Session, project_id: int, project_in: project_schema.ProjectUpdate):
+    """
+    Обновить проект.
+    """
+    db_project = db.query(models.Project).filter(models.Project.id == project_id).first()
+    if db_project:
+        update_data = project_in.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(db_project, key, value)
+        db.add(db_project)
+        db.commit()
+        db.refresh(db_project)
+    return db_project

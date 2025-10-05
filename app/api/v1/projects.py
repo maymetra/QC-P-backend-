@@ -35,6 +35,24 @@ def create_project_for_user(
     """
     return crud_project.create_project(db=db, project=project, owner_id=current_user.id)
 
+@router.get("/{project_id}", response_model=project_schema.Project)
+def read_project(
+        project_id: int,
+        db: Session = Depends(get_db),
+        current_user: models.User = Depends(deps.get_current_user)
+):
+    """
+    Получить информацию о конкретном проекте по ID.
+    """
+    db_project = crud_project.get_project(db, project_id=project_id)
+    if db_project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    # Тут можно добавить логику проверки прав доступа, если нужно,
+    # но пока оставим так для простоты.
+
+    return db_project
+
 @router.delete("/{project_id}", status_code=status.HTTP_200_OK)
 def delete_project(
     project_id: int,
@@ -48,3 +66,21 @@ def delete_project(
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
     return {"detail": "Project deleted successfully"}
+
+@router.put("/{project_id}", response_model=project_schema.Project)
+def update_project(
+        project_id: int,
+        project_in: project_schema.ProjectUpdate,
+        db: Session = Depends(get_db),
+        current_user: models.User = Depends(deps.get_current_user)
+):
+    """
+    Обновить проект по ID.
+    """
+    db_project = crud_project.get_project(db, project_id=project_id)
+    if db_project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    # В будущем здесь можно добавить проверку, что обновлять может только админ или менеджер проекта
+
+    return crud_project.update_project(db=db, project_id=project_id, project_in=project_in)
