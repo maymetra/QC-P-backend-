@@ -7,7 +7,7 @@ from alembic import context
 
 from app.core.config import settings
 from app.db.base import Base
-from app.db.models import User # Импортируем нашу модель User
+from app.db.models import User, Project, Item
 
 
 # this is the Alembic Config object, which provides
