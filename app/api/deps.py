@@ -48,3 +48,14 @@ def get_current_admin_user(current_user: models.User = Depends(get_current_user)
             detail="The user doesn't have enough privileges",
         )
     return current_user
+
+def get_current_auditor_or_admin_user(current_user: models.User = Depends(get_current_user)):
+    """
+    Зависимость, которая проверяет, является ли текущий пользователь админом или аудитором.
+    """
+    if current_user.role not in ("admin", "auditor"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="The user doesn't have enough privileges",
+        )
+    return current_user

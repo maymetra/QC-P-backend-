@@ -57,3 +57,15 @@ class Item(Base):
     # Связь с таблицей projects
     project_id = Column(Integer, ForeignKey("projects.id"))
     project = relationship("Project", back_populates="items")
+
+
+class Template(Base):
+    __tablename__ = "templates"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True, nullable=False)
+    items = Column(JSON, nullable=False)
+
+    # Связь с пользователем, который создал шаблон (опционально, но хорошая практика)
+    owner_id = Column(Integer, ForeignKey("users.id"))
+    owner = relationship("User")
