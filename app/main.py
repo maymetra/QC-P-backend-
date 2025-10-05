@@ -1,12 +1,10 @@
 # app/main.py
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware  # <-- 1. Импортируем middleware
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1 import auth, projects, users, items
 
 app = FastAPI(title="Quality Control API")
-
-# --- НАЧАЛО НОВОГО КОДА ---
 
 # Список адресов, с которых мы разрешаем запросы.
 # В будущем сюда можно будет добавить адрес твоего продакшн-сайта.
@@ -22,7 +20,7 @@ app.add_middleware(
     allow_methods=["*"],    # Разрешить все методы (GET, POST, etc.)
     allow_headers=["*"],    # Разрешить все заголовки
 )
-# --- КОНЕЦ НОВОГО КОДА ---
+
 
 # Подключаем роутеры
 app.include_router(auth.router, prefix="/api/v1")
