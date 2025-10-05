@@ -42,7 +42,7 @@ def delete_project(
     current_admin: models.User = Depends(deps.get_current_admin_user) # <-- Только для админов!
 ):
     """
-    Удалить проект по ID.
+    Удалить проект по  ID.
     """
     project = crud_project.delete_project(db=db, project_id=project_id)
     if project is None:
