@@ -37,3 +37,17 @@ def delete_template(db: Session, template_id: int):
         db.delete(db_template)
         db.commit()
     return db_template
+
+def update_template(db: Session, template_id: int, template_in: template_schema.TemplateCreate):
+    """
+    Обновить шаблон.
+    """
+    db_template = db.query(models.Template).filter(models.Template.id == template_id).first()
+    if db_template:
+        update_data = template_in.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(db_template, key, value)
+        db.add(db_template)
+        db.commit()
+        db.refresh(db_template)
+    return db_template

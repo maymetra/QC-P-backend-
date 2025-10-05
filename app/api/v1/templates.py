@@ -39,6 +39,22 @@ def create_template(
     return crud_template.create_template(db=db, template=template, owner_id=current_user.id)
 
 
+@router.put("/{template_id}", response_model=template_schema.Template)
+def update_template(
+    template_id: int,
+    template_in: template_schema.TemplateCreate, # Используем схему создания для обновления
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(deps.get_current_auditor_or_admin_user)
+):
+    """
+    Обновить шаблон по ID.
+    """
+    db_template = crud_template.update_template(db, template_id=template_id, template_in=template_in)
+    if not db_template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    return db_template
+
+
 @router.delete("/{template_id}", status_code=status.HTTP_200_OK)
 def delete_template(
     template_id: int,
