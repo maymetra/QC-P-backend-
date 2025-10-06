@@ -4,13 +4,13 @@ from datetime import date
 from typing import List, Any
 from .project import ProjectSimple
 
-# Эта схема описывает структуру одного документа или вложения
+# Обновляем эту схему
 class Attachment(BaseModel):
-    uid: str
-    name: str
-    url: str
+    uid: str      # Уникальный ID файла (генерируется фронтендом или сервером)
+    name: str     # Оригинальное имя файла
+    file_path: str # Путь на сервере/уникальное имя
 
-# Базовая схема для Item
+# В ItemBase и ItemUpdate меняем List[Any] на List[Attachment]
 class ItemBase(BaseModel):
     item: str
     action: str | None = None
@@ -20,14 +20,12 @@ class ItemBase(BaseModel):
     closed_date: date | None = None
     status: str = "open"
     comment: str | None = None
-    documents: List[Any] = [] # Используем Any, т.к. структура может быть разной
-    attachments: List[Any] = []
+    documents: List[Attachment] = []
+    attachments: List[Attachment] = []
 
-# Схема для создания Item
 class ItemCreate(ItemBase):
     pass
 
-# Схема для обновления Item
 class ItemUpdate(BaseModel):
     item: str | None = None
     action: str | None = None
@@ -37,8 +35,8 @@ class ItemUpdate(BaseModel):
     closed_date: date | None = None
     status: str | None = None
     comment: str | None = None
-    documents: List[Any] | None = None
-    attachments: List[Any] | None = None
+    documents: List[Attachment] | None = None
+    attachments: List[Attachment] | None = None
 
 # Схема для отображения Item в API
 class Item(ItemBase):

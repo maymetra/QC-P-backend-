@@ -11,4 +11,5 @@ __pycache__/
 
 # Environment variables
 .env
-/migrations/versions/7b3ea3335288_create_templates_table.py
+/migrations
+/media
