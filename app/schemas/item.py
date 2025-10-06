@@ -2,6 +2,7 @@
 from pydantic import BaseModel
 from datetime import date
 from typing import List, Any
+from .project import ProjectSimple
 
 # Эта схема описывает структуру одного документа или вложения
 class Attachment(BaseModel):
@@ -43,6 +44,7 @@ class ItemUpdate(BaseModel):
 class Item(ItemBase):
     id: int
     project_id: int
+    project: ProjectSimple
 
     class Config:
         from_attributes = True

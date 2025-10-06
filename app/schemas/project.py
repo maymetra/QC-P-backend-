@@ -20,6 +20,14 @@ class ProjectCreate(ProjectBase):
 class ProjectUpdate(ProjectBase):
     pass
 
+# Простая схема для вложения в другие схемы (например, в Item)
+class ProjectSimple(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        from_attributes = True
+
 # Основная схема для отображения проекта (то, что мы отдаем фронтенду)
 class Project(ProjectBase):
     id: int
