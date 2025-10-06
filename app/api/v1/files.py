@@ -41,9 +41,10 @@ async def upload_file(
 
     # Возвращаем метаданные, которые фронтенд сохранит в Item
     return {
-        "uid": str(uuid.uuid4()),  # Генерируем uid для Ant Design
+        "uid": str(uuid.uuid4()),
         "name": file.filename,
-        "file_path": str(file_path).replace("\\", "/"),  # Возвращаем путь в POSIX-формате
+        # ИЗМЕНЕНИЕ ЗДЕСЬ: Возвращаем только имя файла, а не полный путь
+        "file_path": unique_filename,
     }
 
 
