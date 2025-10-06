@@ -1,5 +1,5 @@
 # app/api/v1/knowledge_base.py
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -21,3 +21,22 @@ def read_knowledge_base(
     """
     items = crud_knowledge_base.get_all_items(db)
     return items
+
+@router.post("/", response_model=kb_schema.KnowledgeBaseItem, status_code=status.HTTP_201_CREATED)
+def create_knowledge_base_item(
+        item_in: kb_schema.KnowledgeBaseItemCreate,
+        db: Session = Depends(get_db),
+        current_user: models.User = Depends(deps.get_current_auditor_or_admin_user)
+):
+    """
+    Создать новый элемент в базе знаний.
+    """
+    # Проверяем, не существует ли уже такой элемент
+    db_item = crud_knowledge_base.get_kb_item_by_text(db, item_text=item_in.item)
+    if db_item:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Knowledge base item with this text already exists."
+        )
+
+    return crud_knowledge_base.create_kb_item(db=db, item=item_in)

@@ -1,5 +1,11 @@
 # app/schemas/knowledge_base.py
 from pydantic import BaseModel
+from typing import List
+
+# Схема для создания нового элемента
+class KnowledgeBaseItemCreate(BaseModel):
+    category: str
+    item: str
 
 # Схема для одного элемента базы знаний
 class KnowledgeBaseItem(BaseModel):
