@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1 import auth, projects, users, items, templates, knowledge_base
+from app.api.v1 import auth, projects, users, items, templates, knowledge_base, dashboard
 
 app = FastAPI(title="Quality Control API")
 
@@ -29,6 +29,8 @@ app.include_router(users.router, prefix="/api/v1")
 app.include_router(items.router, prefix="/api/v1")
 app.include_router(templates.router, prefix="/api/v1")
 app.include_router(knowledge_base.router, prefix="/api/v1")
+app.include_router(dashboard.router, prefix="/api/v1")
+
 
 
 # Создаем первый "маршрут" или "эндпоинт"
