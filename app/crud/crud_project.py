@@ -2,7 +2,7 @@
 from sqlalchemy.orm import Session
 from app.db import models
 from app.schemas import project as project_schema, item as item_schema
-from app.crud import crud_template, crud_item # <-- Импортируем crud_template и crud_item
+from app.crud import crud_template, crud_item
 
 
 
@@ -18,7 +18,7 @@ def get_projects(db: Session, user: models.User, skip: int = 0, limit: int = 100
     if user.role == "manager":
         return db.query(models.Project).filter(models.Project.manager == user.name).offset(skip).limit(limit).all()
 
-    return []  # Другие роли (если появятся) не видят проектов
+    return []
 
 
 def create_project(db: Session, project: project_schema.ProjectCreate, owner_id: int):
@@ -26,14 +26,12 @@ def create_project(db: Session, project: project_schema.ProjectCreate, owner_id:
     Создать новый проект для пользователя.
     Если указан шаблон, создать задачи из него.
     """
-    # 1. Создаем сам проект
     project_data = project.model_dump(exclude={"template", "basePlannedDate"})
     db_project = models.Project(**project_data, owner_id=owner_id)
     db.add(db_project)
     db.commit()
     db.refresh(db_project)
 
-    # 2. Если был передан шаблон, создаем задачи
     if project.template:
         template = crud_template.get_template_by_name(db, name=project.template)
         if template:
@@ -56,11 +54,18 @@ def delete_project(db: Session, project_id: int):
         db.commit()
     return db_project
 
-def get_project(db: Session, project_id: int):
+def get_project(db: Session, project_id: int, user: models.User):
     """
-    Получить проект по ID.
+    Получить проект по ID с проверкой прав доступа.
     """
-    return db.query(models.Project).filter(models.Project.id == project_id).first()
+    project = db.query(models.Project).filter(models.Project.id == project_id).first()
+    if not project:
+        return None
+    if user.role in ("admin", "auditor"):
+        return project
+    if user.role == "manager" and project.manager == user.name:
+        return project
+    return None
 
 def update_project(db: Session, project_id: int, project_in: project_schema.ProjectUpdate):
     """

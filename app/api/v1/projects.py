@@ -44,12 +44,9 @@ def read_project(
     """
     Получить информацию о конкретном проекте по ID.
     """
-    db_project = crud_project.get_project(db, project_id=project_id)
+    db_project = crud_project.get_project(db, project_id=project_id, user=current_user)
     if db_project is None:
-        raise HTTPException(status_code=404, detail="Project not found")
-
-    # Тут можно добавить логику проверки прав доступа, если нужно,
-    # но пока оставим так для простоты.
+        raise HTTPException(status_code=404, detail="Project not found or you don't have access")
 
     return db_project
 
@@ -77,10 +74,8 @@ def update_project(
     """
     Обновить проект по ID.
     """
-    db_project = crud_project.get_project(db, project_id=project_id)
+    db_project = crud_project.get_project(db, project_id=project_id, user=current_user)
     if db_project is None:
-        raise HTTPException(status_code=404, detail="Project not found")
-
-    # В будущем здесь можно добавить проверку, что обновлять может только админ или менеджер проекта
+        raise HTTPException(status_code=404, detail="Project not found or you don't have access")
 
     return crud_project.update_project(db=db, project_id=project_id, project_in=project_in)
