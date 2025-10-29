@@ -17,19 +17,28 @@ def read_users(
         db: Session = Depends(get_db),
         skip: int = 0,
         limit: int = 100,
-        current_admin: models.User = Depends(deps.get_current_admin_user)  # <-- ЗАЩИТА!
+        current_admin: models.User = Depends(deps.get_current_admin_user)
 ):
     """Получить список всех пользователей (только для админов)."""
     users = crud_user.get_users(db, skip=skip, limit=limit)
     return users
 
+@router.get("/managers", response_model=List[user_schema.User])
+def read_managers(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(deps.get_current_auditor_or_admin_user)
+):
+    """Получить список всех менеджеров (для админов и аудиторов)."""
+    managers = crud_user.get_managers(db)
+    return managers
+
 
 @router.put("/{user_id}", response_model=user_schema.User)
 def update_user_data(
         user_id: int,
-        user_in: user_schema.UserCreate,  # Используем схему создания для обновления
+        user_in: user_schema.UserCreate,
         db: Session = Depends(get_db),
-        current_admin: models.User = Depends(deps.get_current_admin_user)  # <-- ЗАЩИТА!
+        current_admin: models.User = Depends(deps.get_current_admin_user)
 ):
     """Обновить пользователя (только для админов)."""
     db_user = crud_user.get_user(db, user_id=user_id)
