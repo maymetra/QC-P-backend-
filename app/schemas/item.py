@@ -1,25 +1,31 @@
 # app/schemas/item.py
-from pydantic import BaseModel
+from pydantic import BaseModel, constr
 from datetime import date
-from typing import List, Any
+from typing import List, Any, Optional
 from .project import ProjectSimple
+from enum import Enum
 
-# Обновляем эту схему
+# Enum для статусов задач
+class ItemStatus(str, Enum):
+    open = "open"
+    pending = "pending"
+    approved = "approved"
+    rejected = "rejected"
+
 class Attachment(BaseModel):
-    uid: str      # Уникальный ID файла (генерируется фронтендом или сервером)
-    name: str     # Оригинальное имя файла
-    file_path: str # Путь на сервере/уникальное имя
+    uid: str
+    name: str
+    file_path: str
 
-# В ItemBase и ItemUpdate меняем List[Any] на List[Attachment]
 class ItemBase(BaseModel):
-    item: str
-    action: str | None = None
-    author: str | None = None
-    reviewer: str | None = None
-    planned_date: date | None = None
-    closed_date: date | None = None
-    status: str = "open"
-    comment: str | None = None
+    item: constr(min_length=1, max_length=255)
+    action: Optional[constr(max_length=1000)] = None
+    author: Optional[constr(max_length=100)] = None
+    reviewer: Optional[constr(max_length=100)] = None
+    planned_date: Optional[date] = None
+    closed_date: Optional[date] = None
+    status: ItemStatus = ItemStatus.open
+    comment: Optional[constr(max_length=2000)] = None
     documents: List[Attachment] = []
     attachments: List[Attachment] = []
 
@@ -27,18 +33,17 @@ class ItemCreate(ItemBase):
     pass
 
 class ItemUpdate(BaseModel):
-    item: str | None = None
-    action: str | None = None
-    author: str | None = None
-    reviewer: str | None = None
-    planned_date: date | None = None
-    closed_date: date | None = None
-    status: str | None = None
-    comment: str | None = None
-    documents: List[Attachment] | None = None
-    attachments: List[Attachment] | None = None
+    item: Optional[constr(min_length=1, max_length=255)] = None
+    action: Optional[constr(max_length=1000)] = None
+    author: Optional[constr(max_length=100)] = None
+    reviewer: Optional[constr(max_length=100)] = None
+    planned_date: Optional[date] = None
+    closed_date: Optional[date] = None
+    status: Optional[ItemStatus] = None
+    comment: Optional[constr(max_length=2000)] = None
+    documents: Optional[List[Attachment]] = None
+    attachments: Optional[List[Attachment]] = None
 
-# Схема для отображения Item в API
 class Item(ItemBase):
     id: int
     project_id: int

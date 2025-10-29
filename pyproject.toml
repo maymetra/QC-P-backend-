@@ -7,6 +7,8 @@ authors = [
 ]
 readme = "README.md"
 requires-python = ">=3.12"
+
+# Основные зависимости, необходимые для работы приложения
 dependencies = [
     "fastapi[cors] (>=0.118.0,<0.119.0)",
     "uvicorn[standard] (>=0.37.0,<0.38.0)",
@@ -14,14 +16,16 @@ dependencies = [
     "psycopg2-binary (>=2.9.10,<3.0.0)",
     "pydantic-settings (>=2.11.0,<3.0.0)",
     "python-dotenv (>=1.1.1,<2.0.0)",
-    "alembic (>=1.16.5,<2.0.0)",
     "python-jose (>=3.5.0,<4.0.0)",
     "python-multipart (>=0.0.20,<0.0.21)",
     "bcrypt (<4)",
     "passlib (>=1.7.4)",
 ]
 
-
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+# Новая секция для зависимостей разработки
+[tool.poetry.group.dev.dependencies]
+alembic = ">=1.16.5,<2.0.0"
