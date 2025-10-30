@@ -1,18 +1,22 @@
-# Шаг 1: Используем официальный легковесный образ Python
+# Шаг 1: Используем официальный образ Python
 FROM python:3.12-slim
 
-# Шаг 2: Устанавливаем рабочую директорию
+# Шаг 2: Устанавливаем системные зависимости, необходимые для сборки пакетов
+RUN apt-get update && apt-get install -y build-essential
+
+# Шаг 3: Устанавливаем рабочую директорию
 WORKDIR /app
 
-# Шаг 3: Копируем скачанные пакеты и файл с требованиями
-COPY requirements.txt .
-COPY packages/ /app/packages/
+# Шаг 4: Копируем файлы с зависимостями
+COPY pyproject.toml poetry.lock ./
 
-# Шаг 4: Устанавливаем зависимости из локальной папки, без обращения к сети
-RUN pip install --no-index --find-links=/app/packages -r requirements.txt
+# Шаг 5: Устанавливаем Poetry и зависимости проекта
+RUN pip install poetry && \
+    poetry config virtualenvs.create false && \
+    poetry install --without dev --no-interaction --no-ansi --no-root
 
-# Шаг 5: Копируем остальной код приложения
+# Шаг 6: Копируем весь остальной код приложения
 COPY . .
 
-# Шаг 6: Указываем команду для запуска
+# Шаг 7: Указываем команду для запуска
 CMD ["gunicorn", "app.main:app", "--workers", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
