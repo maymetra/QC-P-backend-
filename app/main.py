@@ -1,4 +1,5 @@
 # app/main.py
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -6,19 +7,17 @@ from app.api.v1 import auth, projects, users, items, templates, knowledge_base, 
 
 app = FastAPI(title="Quality Control API")
 
-# Список адресов, с которых мы разрешаем запросы.
-# В будущем сюда можно будет добавить адрес твоего продакшн-сайта.
-origins = [
-    "http://localhost:5173", # Адрес твоего React-приложения
-    "http://127.0.0.1:5173",
-]
+# Получаем список разрешенных origins из переменной окружения
+# Переменная должна содержать адреса через запятую, например: "http://localhost:5173,http://gema-qmc01l.dcm.psigem.de"
+origins = os.environ.get("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",")
+
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  # Разрешить запросы с этих адресов
-    allow_credentials=True, # Разрешить передачу cookie/токенов
-    allow_methods=["*"],    # Разрешить все методы (GET, POST, etc.)
-    allow_headers=["*"],    # Разрешить все заголовки
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 

@@ -12,6 +12,7 @@ requires-python = ">=3.12"
 dependencies = [
     "fastapi[cors] (>=0.118.0,<0.119.0)",
     "uvicorn[standard] (>=0.37.0,<0.38.0)",
+    "gunicorn (>=22.0.0,<23.0.0)",
     "sqlalchemy (>=2.0.43,<3.0.0)",
     "psycopg2-binary (>=2.9.10,<3.0.0)",
     "pydantic-settings (>=2.11.0,<3.0.0)",
@@ -20,6 +21,7 @@ dependencies = [
     "python-multipart (>=0.0.20,<0.0.21)",
     "bcrypt (<4)",
     "passlib (>=1.7.4)",
+    "alembic (>=1.16.5,<2.0.0)",
 ]
 
 [build-system]
@@ -28,4 +30,4 @@ build-backend = "poetry.core.masonry.api"
 
 # Новая секция для зависимостей разработки
 [tool.poetry.group.dev.dependencies]
-alembic = ">=1.16.5,<2.0.0"
+# alembic отсюда убран
