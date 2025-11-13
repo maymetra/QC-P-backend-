@@ -30,9 +30,26 @@ def get_dashboard_stats(db: Session, user: models.User):
         models.Item.status.in_(['open', 'rejected'])
     ).all()
 
+    # --- НОВЫЙ КОД: Подсчет всех статусов ---
+    all_items_query = db.query(models.Item.status, func.count(models.Item.id))
+
+    # Если это не админ/аудитор, фильтруем и этот запрос
+    if user.role not in ("admin", "auditor"):
+        all_items_query = all_items_query.join(models.Project).filter(models.Project.manager == user.name)
+
+    status_counts_query = all_items_query.group_by(models.Item.status).all()
+
+    # Инициализируем нули, чтобы на фронтенде всегда были все ключи
+    status_counts = {"open": 0, "approved": 0, "rejected": 0, "pending": 0}
+    for status, count in status_counts_query:
+        if status in status_counts:
+            status_counts[status] = count
+    # --- КОНЕЦ НОВОГО КОДА ---
+
     return {
         "pending_items_count": len(pending_items),
         "overdue_items_count": len(overdue_items),
         "pending_items": pending_items,
         "overdue_items": overdue_items,
+        "status_counts": status_counts  # <-- НАШИ НОВЫЕ ДАННЫЕ
     }
