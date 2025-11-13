@@ -5,33 +5,34 @@ from typing import Optional
 from datetime import date
 from enum import Enum
 
-# Создаем Enum для статусов, чтобы принимать только разрешенные значения
+# Создаем Enum для статусов
 class ProjectStatus(str, Enum):
     in_progress = "in_progress"
     finished = "finished"
     on_hold = "on_hold"
 
-# Базовая схема, содержит общие поля
+# Базовая схема
 class ProjectBase(BaseModel):
-    name: constr(min_length=1, max_length=100) # Ограничиваем длину имени
+    name: constr(min_length=1, max_length=100)
     kunde: Optional[constr(max_length=100)] = None
     manager: Optional[constr(max_length=100)] = None
-    status: ProjectStatus # Теперь здесь можно использовать только значения из Enum
+    # Убрали status отсюда, чтобы не делать его обязательным везде
 
 # Схема для создания проекта (то, что мы ждем от фронтенда)
 class ProjectCreate(ProjectBase):
     template: Optional[str] = None
     basePlannedDate: Optional[date] = None
+    # Статус по умолчанию "in_progress"
+    status: ProjectStatus = ProjectStatus.in_progress
 
 # Схема для обновления проекта
-class ProjectUpdate(BaseModel): # Меняем наследование, чтобы разрешить частичное обновление
+class ProjectUpdate(BaseModel):
     name: Optional[constr(min_length=1, max_length=100)] = None
     kunde: Optional[constr(max_length=100)] = None
     manager: Optional[constr(max_length=100)] = None
     status: Optional[ProjectStatus] = None
 
-
-# Простая схема для вложения в другие схемы (например, в Item)
+# Простая схема
 class ProjectSimple(BaseModel):
     id: int
     name: str
@@ -39,10 +40,12 @@ class ProjectSimple(BaseModel):
     class Config:
         from_attributes = True
 
-# Основная схема для отображения проекта (то, что мы отдаем фронтенду)
+# Основная схема для отображения
 class Project(ProjectBase):
     id: int
     owner: User
+    # Добавляем status сюда явно, так как убрали из Base
+    status: ProjectStatus
 
     class Config:
         from_attributes = True
