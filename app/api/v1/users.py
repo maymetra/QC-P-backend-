@@ -1,5 +1,6 @@
 # app/api/v1/users.py
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -59,3 +60,30 @@ def update_user_data(
     user = crud_user.update_user(db=db, db_user=db_user, user_in=user_in)
     return user
 
+class NotificationCounts(BaseModel):
+    unknown_managers: int
+    password_resets: int
+
+
+@router.get("/notifications/counts", response_model=NotificationCounts)
+def get_notification_counts(
+        db: Session = Depends(get_db),
+        current_admin: models.User = Depends(deps.get_current_admin_user)
+):
+    """
+    Получить количество уведомлений для админа.
+    """
+    # 1. Считаем запросы на сброс пароля
+    reset_count = db.query(models.User).filter(models.User.password_reset_needed == True).count()
+
+    # 2. Считаем неизвестных менеджеров
+    all_users_names = {name for (name,) in db.query(models.User.name).all()}
+    project_managers = {manager for (manager,) in
+                        db.query(models.Project.manager).filter(models.Project.manager != None).distinct().all()}
+
+    unknown_manager_count = len(project_managers - all_users_names)
+
+    return NotificationCounts(
+        unknown_managers=unknown_manager_count,
+        password_resets=reset_count
+    )
