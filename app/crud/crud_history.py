@@ -18,7 +18,7 @@ def create_event(
         details=details
     )
     db.add(db_event)
-    db.commit()
+    db.commit() # <-- УБЕДИТЕСЬ, ЧТО COMMIT ЗДЕСЬ ЕСТЬ
     db.refresh(db_event)
     return db_event
 

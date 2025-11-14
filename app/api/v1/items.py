@@ -41,17 +41,10 @@ def create_item_for_project(
     if db_project is None:
         raise HTTPException(status_code=404, detail="Project not found or you don't have access")
 
-    db_item = crud_item.create_project_item(db=db, item=item, project_id=project_id)
-
-    # --- ЛОГИРОВАНИЕ ---
-    crud_history.create_event(
-        db=db, project_id=project_id, user_name=current_user.name,
-        event_type="item_added",
-        details=f"Item added: '{db_item.item}'"
+    # 1. Передаем user_name. Убираем логирование отсюда.
+    return crud_item.create_project_item(
+        db=db, item=item, project_id=project_id, user_name=current_user.name
     )
-    # ---
-
-    return db_item
 
 
 @router.put("/projects/{project_id}/items/{item_id}", response_model=item_schema.Item)
@@ -67,24 +60,16 @@ def update_item_details(
         raise HTTPException(status_code=404, detail="Project not found or you don't have access")
 
     # --- ЛОГИРОВАНИЕ: Получаем старые значения ---
-    db_item_before = db.query(models.Item).filter(models.Item.id == item_id).first()
-    if not db_item_before:
+    item = crud_item.update_item(
+        db=db, item_id=item_id, item_in=item_in, user_name=current_user.name, project_id=project_id
+    )
+    if not item:
         raise HTTPException(status_code=404, detail="Item not found")
-    old_status = db_item_before.status
-    # ---
 
-    updated_item = crud_item.update_item(db=db, item_id=item_id, item_in=item_in)
+    if item.project_id != project_id:
+        raise HTTPException(status_code=403, detail="Item does not belong to this project")
 
-    # --- ЛОГИРОВАНИЕ: Сравниваем и пишем ---
-    if item_in.status and old_status != updated_item.status:
-        crud_history.create_event(
-            db=db, project_id=project_id, user_name=current_user.name,
-            event_type="item_status_updated",
-            details=f"Item '{updated_item.item}' status changed from '{old_status}' to '{updated_item.status}'."
-        )
-    # ---
-
-    return updated_item
+    return item
 
 
 @router.delete("/projects/{project_id}/items/{item_id}", status_code=status.HTTP_200_OK)
@@ -107,14 +92,8 @@ def delete_item(
 
     item_name = item_to_delete.item  # Запоминаем имя до удаления
 
-    crud_item.delete_item(db=db, item_id=item_id)
-
-    # --- ЛОГИРОВАНИЕ ---
-    crud_history.create_event(
-        db=db, project_id=project_id, user_name=current_user.name,
-        event_type="item_deleted",
-        details=f"Item deleted: '{item_name}'"
+    crud_item.delete_item(
+        db=db, item_id=item_id, user_name=current_user.name, project_id=project_id
     )
-    # ---
 
     return {"detail": "Item deleted successfully"}

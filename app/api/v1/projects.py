@@ -30,21 +30,14 @@ def read_projects(
 
 @router.post("/", response_model=project_schema.Project)
 def create_project_for_user(
-        project: project_schema.ProjectCreate,
-        db: Session = Depends(get_db),
-        current_user: models.User = Depends(deps.get_current_user)
+    project: project_schema.ProjectCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(deps.get_current_user)
 ):
-    db_project = crud_project.create_project(db=db, project=project, owner_id=current_user.id)
-
-    crud_history.create_event(
-        db=db,
-        project_id=db_project.id,
-        user_name=current_user.name,
-        event_type="project_created",
-        details=f"Project '{db_project.name}' created."
+    # 1. Передаем user_name в CRUD. Убираем логирование отсюда.
+    return crud_project.create_project(
+        db=db, project=project, owner_id=current_user.id, user_name=current_user.name
     )
-
-    return db_project
 
 @router.get("/{project_id}", response_model=project_schema.Project)
 def read_project(
@@ -87,30 +80,10 @@ def update_project(
     if db_project is None:
         raise HTTPException(status_code=404, detail="Project not found or you don't have access")
 
-    # --- ЛОГИРОВАНИЕ: Сохраняем старые значения ---
-    old_status = db_project.status
-    old_manager = db_project.manager
-    # ---
-
-    updated_project = crud_project.update_project(db=db, project_id=project_id, project_in=project_in)
-
-    # --- ЛОГИРОВАНИЕ: Сравниваем и пишем в историю ---
-    if old_status != updated_project.status:
-        crud_history.create_event(
-            db=db, project_id=updated_project.id, user_name=current_user.name,
-            event_type="project_status_updated",
-            details=f"Project status changed from '{old_status}' to '{updated_project.status}'."
-        )
-
-    if old_manager != updated_project.manager:
-        crud_history.create_event(
-            db=db, project_id=updated_project.id, user_name=current_user.name,
-            event_type="project_manager_updated",
-            details=f"Manager changed from '{old_manager or 'None'}' to '{updated_project.manager or 'None'}'."
-        )
-    # --- КОНЕЦ ЛОГИРОВАНИЯ ---
-
-    return updated_project
+    # 2. Передаем user_name в CRUD. Убираем логирование отсюда.
+    return crud_project.update_project(
+        db=db, project_id=project_id, project_in=project_in, user_name=current_user.name
+    )
 
 
 # --- НОВЫЙ ЭНДПОИНТ ДЛЯ ИСТОРИИ ---
