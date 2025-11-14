@@ -15,7 +15,9 @@ class User(Base):
     role = Column(String, nullable=False)
     is_active = Column(Boolean(), default=True)
 
-    # Добавляем "обратную" связь, чтобы у пользователя можно было получить его проекты
+    # НОВОЕ ПОЛЕ: Флаг запроса сброса пароля
+    password_reset_needed = Column(Boolean(), default=False)
+
     projects = relationship("Project", back_populates="owner")
 
 

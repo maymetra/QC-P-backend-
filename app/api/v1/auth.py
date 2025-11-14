@@ -1,5 +1,5 @@
 # app/api/v1/auth.py
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Body
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -45,3 +45,20 @@ def login_for_access_token(
         data={"sub": user.username, "name": user.name, "role": user.role}
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
+@router.post("/forgot-password")
+def forgot_password(
+        username: str = Body(..., embed=True),  # Ожидает JSON {"username": "..."}
+        db: Session = Depends(get_db)
+):
+    """
+    Запрос на сброс пароля. Устанавливает флаг для админа.
+    """
+    user = crud_user.get_user_by_username(db, username=username)
+    if not user:
+        # Из соображений безопасности можно вернуть 200, даже если юзера нет
+        # но для внутреннего инструмента вернем ошибку для ясности
+        raise HTTPException(status_code=404, detail="User not found")
+
+    crud_user.mark_password_reset(db, user)
+    return {"message": "Password reset requested. Please contact administrator."}

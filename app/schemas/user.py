@@ -1,22 +1,25 @@
 # app/schemas/user.py
 from pydantic import BaseModel
+from typing import Optional
 
-# Схема для создания нового пользователя (при регистрации)
-# Ожидаем эти поля от фронтенда
 class UserCreate(BaseModel):
     username: str
     password: str
     name: str
     role: str
 
-# Схема для отображения пользователя
-# Эти поля мы будем безопасно возвращать фронтенду (без пароля!)
+# Новая схема для обновления своего профиля
+class UserUpdateProfile(BaseModel):
+    name: Optional[str] = None
+    password: Optional[str] = None
+
 class User(BaseModel):
     id: int
     username: str
     name: str
     role: str
     is_active: bool
+    password_reset_needed: bool # <-- Добавлено поле
 
     class Config:
-        from_attributes = True # Позволяет Pydantic читать данные из ORM моделей
+        from_attributes = True
