@@ -1,7 +1,7 @@
 # app/db/models.py
-# (импорты sqlalchemy остаются те же, добавляем ForeignKey и relationship)
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, JSON
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, JSON, DateTime, Text
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 from .base import Base
 
 
@@ -36,6 +36,9 @@ class Project(Base):
 
     # Обратная связь, чтобы у проекта можно было получить список его items
     items = relationship("Item", back_populates="project", cascade="all, delete-orphan")
+
+    # Связь с историей
+    history_events = relationship("ProjectHistoryEvent", back_populates="project", cascade="all, delete-orphan")
 
 
 class Item(Base):
@@ -78,3 +81,18 @@ class KnowledgeBaseItem(Base):
     id = Column(Integer, primary_key=True, index=True)
     category = Column(String, index=True, nullable=False)
     item = Column(String, nullable=False, unique=True)
+
+
+class ProjectHistoryEvent(Base):
+    __tablename__ = "project_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    # C func.now() база данных сама проставит время
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+    user_name = Column(String, nullable=False)
+    event_type = Column(String, nullable=False)  # 'create_project', 'update_status', 'add_item', 'update_item_status'
+    details = Column(Text, nullable=True)  # "Status: In Progress -> Finished"
+
+    # Связь с проектом
+    project_id = Column(Integer, ForeignKey("projects.id"))
+    project = relationship("Project", back_populates="history_events")

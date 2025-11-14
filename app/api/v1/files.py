@@ -7,6 +7,9 @@ from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status
 from fastapi.responses import FileResponse
 from app.api import deps
 from app.db import models
+from app.db.session import get_db
+from sqlalchemy.orm import Session
+from app.crud import crud_history
 
 router = APIRouter(prefix="/files", tags=["Files"])
 
@@ -24,7 +27,8 @@ async def upload_file(
         project_id: int,
         item_id: int,
         file: UploadFile = File(...),
-        current_user: models.User = Depends(deps.get_current_user)
+        current_user: models.User = Depends(deps.get_current_user),
+        db: Session = Depends(get_db) # <-- Добавить db
 ):
     """
     Загружает файл на сервер.
@@ -41,6 +45,20 @@ async def upload_file(
             buffer.write(await file.read())
     except Exception:
         raise HTTPException(status_code=500, detail="Could not save file.")
+
+    # --- ЛОГИРОВАНИЕ ---
+    # Получим имя айтема для красивого лога
+    item_name = "Unknown Item"
+    db_item = db.query(models.Item.item).filter(models.Item.id == item_id).first()
+    if db_item:
+        item_name = db_item[0]
+
+    crud_history.create_event(
+        db=db, project_id=project_id, user_name=current_user.name,
+        event_type="file_uploaded",
+        details=f"File '{file.filename}' uploaded to item '{item_name}'."
+    )
+    # ---
 
     return {
         "uid": str(uuid.uuid4()),
