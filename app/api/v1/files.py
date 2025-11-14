@@ -15,6 +15,7 @@ router = APIRouter(prefix="/files", tags=["Files"])
 
 MEDIA_ROOT = Path("media")
 
+
 def secure_filename(filename: str) -> str:
     """
     Санитизирует имя файла, удаляя недопустимые символы.
@@ -28,7 +29,7 @@ async def upload_file(
         item_id: int,
         file: UploadFile = File(...),
         current_user: models.User = Depends(deps.get_current_user),
-        db: Session = Depends(get_db) # <-- Добавить db
+        db: Session = Depends(get_db)
 ):
     """
     Загружает файл на сервер.
@@ -47,7 +48,6 @@ async def upload_file(
         raise HTTPException(status_code=500, detail="Could not save file.")
 
     # --- ЛОГИРОВАНИЕ ---
-    # Получим имя айтема для красивого лога
     item_name = "Unknown Item"
     db_item = db.query(models.Item.item).filter(models.Item.id == item_id).first()
     if db_item:
@@ -58,6 +58,8 @@ async def upload_file(
         event_type="file_uploaded",
         details=f"File '{file.filename}' uploaded to item '{item_name}'."
     )
+
+    db.commit()  # <-- ВАЖНО: Сохраняем лог
     # ---
 
     return {

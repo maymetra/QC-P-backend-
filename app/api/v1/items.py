@@ -8,7 +8,6 @@ from app.db.session import get_db
 from app.schemas import item as item_schema
 from app.crud import crud_item, crud_project
 from app.api import deps
-from app.crud import crud_item, crud_project, crud_history
 
 router = APIRouter(tags=["Items"])
 
@@ -37,14 +36,19 @@ def create_item_for_project(
         db: Session = Depends(get_db),
         current_user: models.User = Depends(deps.get_current_user)
 ):
+    """Создать новую задачу для проекта."""
     db_project = crud_project.get_project(db, project_id=project_id, user=current_user)
     if db_project is None:
         raise HTTPException(status_code=404, detail="Project not found or you don't have access")
 
-    # 1. Передаем user_name. Убираем логирование отсюда.
-    return crud_item.create_project_item(
+    db_item = crud_item.create_project_item(
         db=db, item=item, project_id=project_id, user_name=current_user.name
     )
+
+    db.commit()
+    db.refresh(db_item)
+
+    return db_item
 
 
 @router.put("/projects/{project_id}/items/{item_id}", response_model=item_schema.Item)
@@ -55,11 +59,11 @@ def update_item_details(
         db: Session = Depends(get_db),
         current_user: models.User = Depends(deps.get_current_user)
 ):
+    """Обновить задачу по ее ID."""
     db_project = crud_project.get_project(db, project_id=project_id, user=current_user)
     if db_project is None:
         raise HTTPException(status_code=404, detail="Project not found or you don't have access")
 
-    # --- ЛОГИРОВАНИЕ: Получаем старые значения ---
     item = crud_item.update_item(
         db=db, item_id=item_id, item_in=item_in, user_name=current_user.name, project_id=project_id
     )
@@ -68,6 +72,9 @@ def update_item_details(
 
     if item.project_id != project_id:
         raise HTTPException(status_code=403, detail="Item does not belong to this project")
+
+    db.commit()
+    db.refresh(item)
 
     return item
 
@@ -90,10 +97,10 @@ def delete_item(
     if item_to_delete.project_id != project_id:
         raise HTTPException(status_code=403, detail="Item does not belong to this project")
 
-    item_name = item_to_delete.item  # Запоминаем имя до удаления
-
     crud_item.delete_item(
         db=db, item_id=item_id, user_name=current_user.name, project_id=project_id
     )
+
+    db.commit()
 
     return {"detail": "Item deleted successfully"}

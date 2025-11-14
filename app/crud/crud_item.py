@@ -30,24 +30,32 @@ def create_project_item(db: Session, item: item_schema.ItemCreate, project_id: i
 def update_item(db: Session, item_id: int, item_in: item_schema.ItemUpdate, user_name: str, project_id: int):
     """Обновить задачу (без коммита)."""
     db_item = db.query(models.Item).filter(models.Item.id == item_id).first()
-    if db_item:
-        old_status = db_item.status  # Запоминаем старый статус
+    if not db_item:
+        return None
 
-        update_data = item_in.model_dump(exclude_unset=True)
-        for field, value in update_data.items():
-            setattr(db_item, field, value)
+    # --- ИСПРАВЛЕННАЯ ЛОГИКА ---
+    # exclude_unset=True гарантирует, что мы получаем dict ТОЛЬКО
+    # с теми полями, которые прислал клиент (а не None по умолчанию)
+    update_data = item_in.model_dump(exclude_unset=True)
 
-        db.add(db_item)  # Добавляем в сессию для обновления
+    old_status = db_item.status  # Запоминаем для лога
 
-        # Логирование
-        if "status" in update_data and old_status != db_item.status:
-            crud_history.create_event(
-                db=db,
-                project_id=project_id,
-                user_name=user_name,
-                event_type="item_status_updated",
-                details=f"Item '{db_item.item}' status changed from '{old_status}' to '{db_item.status}'."
-            )
+    # Применяем обновления
+    for field, value in update_data.items():
+        setattr(db_item, field, value)
+
+    db.add(db_item)  # Добавляем в сессию
+
+    # Логирование, если статус изменился
+    if "status" in update_data and old_status != db_item.status:
+        crud_history.create_event(
+            db=db,
+            project_id=project_id,
+            user_name=user_name,
+            event_type="item_status_updated",
+            details=f"Item '{db_item.item}' status changed from '{old_status}' to '{db_item.status}'."
+        )
+
     return db_item
 
 
