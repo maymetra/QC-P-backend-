@@ -1,4 +1,5 @@
 # app/crud/crud_item.py
+import json  # <-- Импорт
 from sqlalchemy.orm import Session
 from app.db import models
 from app.schemas import item as item_schema
@@ -33,9 +34,6 @@ def update_item(db: Session, item_id: int, item_in: item_schema.ItemUpdate, user
     if not db_item:
         return None
 
-    # --- ИСПРАВЛЕННАЯ ЛОГИКА ---
-    # exclude_unset=True гарантирует, что мы получаем dict ТОЛЬКО
-    # с теми полями, которые прислал клиент (а не None по умолчанию)
     update_data = item_in.model_dump(exclude_unset=True)
 
     old_status = db_item.status  # Запоминаем для лога
@@ -46,15 +44,22 @@ def update_item(db: Session, item_id: int, item_in: item_schema.ItemUpdate, user
 
     db.add(db_item)  # Добавляем в сессию
 
-    # Логирование, если статус изменился
+    # --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
     if "status" in update_data and old_status != db_item.status:
+        # Сохраняем как JSON-строку
+        details_json = json.dumps({
+            "item_name": db_item.item,  # Добавляем имя, чтобы было понятно
+            "from": old_status,
+            "to": db_item.status
+        })
         crud_history.create_event(
             db=db,
             project_id=project_id,
             user_name=user_name,
             event_type="item_status_updated",
-            details=f"Item '{db_item.item}' status changed from '{old_status}' to '{db_item.status}'."
+            details=details_json  # <-- Передаем JSON
         )
+    # --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     return db_item
 

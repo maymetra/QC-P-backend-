@@ -1,4 +1,5 @@
 # app/crud/crud_project.py
+import json
 from sqlalchemy.orm import Session
 from app.db import models
 from app.schemas import project as project_schema, item as item_schema
@@ -8,8 +9,6 @@ from app.crud import crud_template, crud_item, crud_history
 def get_projects(db: Session, user: models.User, skip: int = 0, limit: int = 100):
     """
     Получить список проектов на основе роли пользователя.
-    - Админы/Аудиторы получают все проекты.
-    - Менеджеры получают только проекты, где они указаны как 'manager'.
     """
     if user.role in ("admin", "auditor"):
         return db.query(models.Project).offset(skip).limit(limit).all()
@@ -97,23 +96,30 @@ def update_project(db: Session, project_id: int, project_in: project_schema.Proj
 
         db.add(db_project)  # Добавляем в сессию
 
-        # Логика логирования ПОСЛЕ обновления
+        # --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
         if "status" in update_data and old_status != db_project.status:
+            # Сохраняем как JSON-строку
+            details_json = json.dumps({
+                "from": old_status,
+                "to": db_project.status
+            })
             crud_history.create_event(
                 db=db,
                 project_id=db_project.id,
-                user_name=user_name,  # <-- ИСПРАВЛЕНО: передаем user_name
+                user_name=user_name,
                 event_type="project_status_updated",
-                details=f"Project status changed from '{old_status}' to '{db_project.status}'."
+                details=details_json  # <-- Передаем JSON
             )
 
         if "manager" in update_data and old_manager != db_project.manager:
+            # Оставляем как простую строку
             crud_history.create_event(
                 db=db,
                 project_id=db_project.id,
-                user_name=user_name,  # <-- ИСПРАВЛЕНО: передаем user_name
+                user_name=user_name,
                 event_type="project_manager_updated",
                 details=f"Manager changed from '{old_manager or 'None'}' to '{db_project.manager or 'None'}'."
             )
+        # --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     return db_project
