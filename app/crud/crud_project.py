@@ -5,7 +5,6 @@ from app.schemas import project as project_schema, item as item_schema
 from app.crud import crud_template, crud_item, crud_history
 
 
-
 def get_projects(db: Session, user: models.User, skip: int = 0, limit: int = 100):
     """
     Получить список проектов на основе роли пользователя.
@@ -21,18 +20,18 @@ def get_projects(db: Session, user: models.User, skip: int = 0, limit: int = 100
     return []
 
 
-# 2. Добавляем user_name в аргументы
 def create_project(db: Session, project: project_schema.ProjectCreate, owner_id: int, user_name: str):
     """
-    Создать новый проект для пользователя.
+    Создать новый проект для пользователя (без коммита).
     """
     project_data = project.model_dump(exclude={"template", "basePlannedDate"})
     db_project = models.Project(**project_data, owner_id=owner_id)
     db.add(db_project)
-    db.commit()
-    db.refresh(db_project)
 
-    # --- 3. ЛОГИРОВАНИЕ СОЗДАНИЯ ПРОЕКТА ---
+    # Выполняем flush, чтобы получить db_project.id до коммита
+    db.flush()
+
+    # Логирование создания проекта
     crud_history.create_event(
         db=db,
         project_id=db_project.id,
@@ -40,7 +39,6 @@ def create_project(db: Session, project: project_schema.ProjectCreate, owner_id:
         event_type="project_created",
         details=f"Project '{db_project.name}' created."
     )
-    # ---
 
     if project.template:
         template = crud_template.get_template_by_name(db, name=project.template)
@@ -50,22 +48,24 @@ def create_project(db: Session, project: project_schema.ProjectCreate, owner_id:
                     item=item_name,
                     planned_date=project.basePlannedDate
                 )
-                # 4. Передаем user_name дальше
+                # Передаем user_name дальше
                 crud_item.create_project_item(
                     db=db, item=item_in, project_id=db_project.id, user_name=user_name
                 )
 
-    return db_project
+    return db_project  # commit и refresh будут в API
+
 
 def delete_project(db: Session, project_id: int):
     """
     Удалить проект по ID.
+    (Примечание: логирование удаления здесь не реализовано, но может быть добавлено)
     """
     db_project = db.query(models.Project).filter(models.Project.id == project_id).first()
     if db_project:
         db.delete(db_project)
-        db.commit()
     return db_project
+
 
 def get_project(db: Session, project_id: int, user: models.User):
     """
@@ -81,14 +81,13 @@ def get_project(db: Session, project_id: int, user: models.User):
     return None
 
 
-# 5. Добавляем user_name в аргументы
 def update_project(db: Session, project_id: int, project_in: project_schema.ProjectUpdate, user_name: str):
     """
-    Обновить проект.
+    Обновить проект (без коммита).
     """
     db_project = db.query(models.Project).filter(models.Project.id == project_id).first()
     if db_project:
-        # --- 6. Логика сравнения ДО обновления ---
+        # Логика сравнения ДО обновления
         old_status = db_project.status
         old_manager = db_project.manager
 
@@ -96,24 +95,25 @@ def update_project(db: Session, project_id: int, project_in: project_schema.Proj
         for key, value in update_data.items():
             setattr(db_project, key, value)
 
-        db.add(db_project)
-        db.commit()
-        db.refresh(db_project)
+        db.add(db_project)  # Добавляем в сессию
 
-        # --- 7. Логика логирования ПОСЛЕ обновления ---
-        if old_status != db_project.status:
+        # Логика логирования ПОСЛЕ обновления
+        if "status" in update_data and old_status != db_project.status:
             crud_history.create_event(
-                db=db, project_id=db_project.id, user_name=user_name,
+                db=db,
+                project_id=db_project.id,
+                user_name=user_name,  # <-- ИСПРАВЛЕНО: передаем user_name
                 event_type="project_status_updated",
                 details=f"Project status changed from '{old_status}' to '{db_project.status}'."
             )
 
-        if old_manager != db_project.manager:
+        if "manager" in update_data and old_manager != db_project.manager:
             crud_history.create_event(
-                db=db, project_id=db_project.id, user_name=user_name,
+                db=db,
+                project_id=db_project.id,
+                user_name=user_name,  # <-- ИСПРАВЛЕНО: передаем user_name
                 event_type="project_manager_updated",
                 details=f"Manager changed from '{old_manager or 'None'}' to '{db_project.manager or 'None'}'."
             )
-        # ---
 
     return db_project
