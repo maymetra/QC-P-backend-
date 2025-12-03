@@ -41,6 +41,12 @@ def create_item_for_project(
     if db_project is None:
         raise HTTPException(status_code=404, detail="Project not found or you don't have access")
 
+    if db_project.status == 'finished':
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot add items to an archived project"
+        )
+
     db_item = crud_item.create_project_item(
         db=db, item=item, project_id=project_id, user_name=current_user.name
     )
