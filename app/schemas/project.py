@@ -46,6 +46,7 @@ class Project(ProjectBase):
     owner: User
     status: ProjectStatus
     archived_at: Optional[date] = None
+    planned_end_date: Optional[date] = None
 
     class Config:
         from_attributes = True

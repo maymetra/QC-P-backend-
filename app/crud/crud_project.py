@@ -5,18 +5,33 @@ from app.db import models
 from app.schemas import project as project_schema, item as item_schema
 from app.crud import crud_template, crud_item, crud_history
 from datetime import date
+from sqlalchemy import func
+
 
 def get_projects(db: Session, user: models.User, skip: int = 0, limit: int = 100):
     """
-    Получить список проектов на основе роли пользователя.
+    Получить список проектов с вычисленной датой завершения.
     """
-    if user.role in ("admin", "auditor"):
-        return db.query(models.Project).offset(skip).limit(limit).all()
+    # 1. Создаем запрос с агрегацией: выбираем Проект и MAX(planned_date) из задач
+    query = db.query(
+        models.Project,
+        func.max(models.Item.planned_date).label("max_date")
+    ).outerjoin(models.Item).group_by(models.Project.id)
 
+    # 2. Применяем фильтры по роли
     if user.role == "manager":
-        return db.query(models.Project).filter(models.Project.manager == user.name).offset(skip).limit(limit).all()
+        query = query.filter(models.Project.manager == user.name)
 
-    return []
+    # 3. Получаем результаты
+    results = query.offset(skip).limit(limit).all()
+
+    # 4. Преобразуем результаты в список объектов Project с заполненным полем
+    projects = []
+    for p, max_date in results:
+        p.planned_end_date = max_date  # Присваиваем вычисленное значение
+        projects.append(p)
+
+    return projects
 
 
 def create_project(db: Session, project: project_schema.ProjectCreate, owner_id: int, user_name: str):
