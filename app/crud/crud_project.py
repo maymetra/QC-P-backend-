@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.db import models
 from app.schemas import project as project_schema, item as item_schema
 from app.crud import crud_template, crud_item, crud_history
-
+from datetime import date
 
 def get_projects(db: Session, user: models.User, skip: int = 0, limit: int = 100):
     """
@@ -91,6 +91,16 @@ def update_project(db: Session, project_id: int, project_in: project_schema.Proj
         old_manager = db_project.manager
 
         update_data = project_in.model_dump(exclude_unset=True)
+
+        if "status" in update_data:
+            new_status = update_data["status"]
+            # Если переводим в finished — ставим дату сегодня
+            if new_status == "finished" and old_status != "finished":
+                db_project.archived_at = date.today()
+            # Если возвращаем из finished в работу — убираем дату
+            elif new_status != "finished" and old_status == "finished":
+                db_project.archived_at = None
+
         for key, value in update_data.items():
             setattr(db_project, key, value)
 

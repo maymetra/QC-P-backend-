@@ -29,6 +29,7 @@ class Project(Base):
     kunde = Column(String)
     manager = Column(String)
     status = Column(String, nullable=False)
+    archived_at = Column(Date, nullable=True)
 
     # Связь с таблицей users. Указываем, что это "внешний ключ"
     owner_id = Column(Integer, ForeignKey("users.id"))

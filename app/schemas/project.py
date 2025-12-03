@@ -44,8 +44,8 @@ class ProjectSimple(BaseModel):
 class Project(ProjectBase):
     id: int
     owner: User
-    # Добавляем status сюда явно, так как убрали из Base
     status: ProjectStatus
+    archived_at: Optional[date] = None
 
     class Config:
         from_attributes = True
